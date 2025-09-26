@@ -34,19 +34,30 @@ def submit_survey():
     except ValidationError as ve:
         return jsonify({"error": "validation_error", "detail": ve.errors()}), 422
 
-    record_dict = submission.dict()
+    # Hash sensitive fields
+    email_hash = hash_value(submission.email)
+    age_hash = hash_value(str(submission.age))
 
-    record_dict["email"] = hash_value(record_dict["email"])
-    record_dict["age"] = hash_value(str(record_dict["age"]))
-
-    if not record_dict.get("submission_id"):
+    # Generate submission_id if missing
+    submission_id = submission.submission_id
+    if not submission_id:
         dt = datetime.utcnow().strftime("%Y%m%d%H")
-        record_dict["submission_id"] = hash_value(record_dict["email"] + dt)
+        submission_id = hash_value(email_hash + dt)
 
-    record_dict["received_at"] = datetime.now(timezone.utc)
-    record_dict["ip"] = request.headers.get("X-Forwarded-For", request.remote_addr or "")
+    record = StoredSurveyRecord(
+        name=submission.name,
+        email_hash=email_hash,
+        age_hash=age_hash,
+        consent=submission.consent,
+        rating=submission.rating,
+        comments=submission.comments,
+        user_agent=submission.user_agent,
+        submission_id=submission_id,
+        received_at=datetime.now(timezone.utc),
+        ip=request.headers.get("X-Forwarded-For", request.remote_addr or ""),
+    )
 
-    append_json_line(record_dict)
+    append_json_line(record.dict())
 
     return jsonify({"status": "ok"}), 201
 

@@ -21,8 +21,15 @@ class SurveySubmission(BaseModel):
         if v is not True:
             raise ValueError("consent must be true")
         return v
-        
-# StoredSurveyRecord inherits SurveySubmission and adds metadata
-class StoredSurveyRecord(SurveySubmission):
+
+class StoredSurveyRecord(BaseModel):
+    name: str
+    email_hash: str
+    age_hash: str
+    consent: bool
+    rating: int
+    comments: Optional[str] = None
+    user_agent: Optional[str] = None
+    submission_id: str
     received_at: datetime
     ip: str
