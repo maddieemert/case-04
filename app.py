@@ -35,8 +35,8 @@ def submit_survey():
         return jsonify({"error": "validation_error", "detail": ve.errors()}), 422
 
     # Hash sensitive fields
-    email_hash = hash_value(submission.email)
-    age_hash = hash_value(str(submission.age))
+    hashed_email = hash_value(submission.email)
+    hashed_age = hash_value(str(submission.age))
 
     # Generate submission_id if missing
     submission_id = submission.submission_id
@@ -46,8 +46,8 @@ def submit_survey():
 
     record = StoredSurveyRecord(
         name=submission.name,
-        email_hash=email_hash,
-        age_hash=age_hash,
+        hashed_email=hashed_email,
+        hashed_age=hashed_age,
         consent=submission.consent,
         rating=submission.rating,
         comments=submission.comments,
