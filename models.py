@@ -4,8 +4,8 @@ from pydantic import BaseModel, Field, EmailStr, validator
 
 class SurveySubmission(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
-    email: EmailStr
-    age: int = Field(..., ge=13, le=120)
+    email: EmailStr   # raw email from user
+    age: int = Field(..., ge=13, le=120)  # raw age from user
     consent: bool = Field(..., description="Must be true to accept")
     rating: int = Field(..., ge=1, le=5)
     comments: Optional[str] = Field(None, max_length=1000)
@@ -24,8 +24,8 @@ class SurveySubmission(BaseModel):
 
 class StoredSurveyRecord(BaseModel):
     name: str
-    hashed_email: str    
-    hashed_age: str      
+    hashed_email: str
+    hashed_age: str
     consent: bool
     rating: int
     comments: Optional[str] = None

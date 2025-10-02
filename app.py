@@ -7,16 +7,13 @@ from storage import append_json_line
 import hashlib
 
 app = Flask(__name__)
-# Allow cross-origin requests so the static HTML can POST from localhost or file://
 CORS(app, resources={r"/v1/*": {"origins": "*"}})
 
 def hash_value(value: str) -> str:
-    """Return SHA-256 hash of the input string."""
     return hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 @app.route("/ping", methods=["GET"])
 def ping():
-    """Simple health check endpoint."""
     return jsonify({
         "status": "ok",
         "message": "API is alive",
@@ -34,31 +31,25 @@ def submit_survey():
     except ValidationError as ve:
         return jsonify({"error": "validation_error", "detail": ve.errors()}), 422
 
-    # Hash sensitive fields
-    hashed_email = hash_value(submission.email)
-    hashed_age = hash_value(str(submission.age))
+    # Extract raw values
+    raw_email = submission.email
+    raw_age = submission.age
 
-    # Generate submission_id if missing
-    submission_id = submission.submission_id
-    if not submission_id:
-        dt = datetime.utcnow().strftime("%Y%m%d%H")
-        submission_id = hash_value(email_hash + dt)
-
+    # Build stored record
     record = StoredSurveyRecord(
         name=submission.name,
-        hashed_email=hashed_email,
-        hashed_age=hashed_age,
+        hashed_email=hash_value(raw_email),
+        hashed_age=hash_value(str(raw_age)),
         consent=submission.consent,
         rating=submission.rating,
         comments=submission.comments,
-        user_agent=submission.user_agent,
-        submission_id=submission_id,
+        user_agent=submission.user_agent or request.headers.get("User-Agent"),
+        submission_id=submission.submission_id or hash_value(raw_email + datetime.utcnow().strftime("%Y%m%d%H")),
         received_at=datetime.now(timezone.utc),
-        ip=request.headers.get("X-Forwarded-For", request.remote_addr or ""),
+        ip=request.headers.get("X-Forwarded-For", request.remote_addr or "")
     )
 
     append_json_line(record.dict())
-
     return jsonify({"status": "ok"}), 201
 
 if __name__ == "__main__":
